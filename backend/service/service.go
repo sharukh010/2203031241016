@@ -1,7 +1,14 @@
 package service
 
-import "github.com/google/uuid"
+import (
+	"github.com/google/uuid"
+	"github.com/sharukh010/url-shortner/repository"
+)
 
 func GenerateShortCode() string {
-	return uuid.NewString()[1:6]
+	shortCode := uuid.New().String()[0:8] 
+	for repository.IsLinkExists(shortCode) {
+		shortCode = uuid.New().String()[0:8] 
+	}
+	return shortCode
 }

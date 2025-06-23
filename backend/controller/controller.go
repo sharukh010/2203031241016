@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"fmt"
+
 	"log"
 	"net/http"
 	"os"
@@ -44,6 +44,10 @@ func CreateLink() gin.HandlerFunc{
 		if newLink.ShortCode == "" {
 			newLink.ShortCode = service.GenerateShortCode()
 		}
+		if repository.IsLinkExists(newLink.ShortCode) {
+			c.JSON(http.StatusConflict, gin.H{"error": "Short code already exists"})
+			return
+		}
 		newLink.ShortLink = baseURL+newLink.ShortCode;
 		if err := repository.CreateLink(&newLink); err != nil {
 			log.Println("Error while creating new link:", err)
@@ -65,7 +69,6 @@ func RedirectToLink() gin.HandlerFunc{
 		}
 		link, err := repository.GetLinkByShortCode(shortCode)
 		if err != nil {
-			log.Println("Error while fetching link:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch link"})
 			return
 		}
@@ -77,8 +80,37 @@ func RedirectToLink() gin.HandlerFunc{
 			c.JSON(http.StatusGone, gin.H{"error": "Short link has expired"})
 			return
 		}
-		fmt.Print("Redirecting to link:", link, "\n")
+		if err := repository.UpdateClickCount(shortCode); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update click count"})
+			return
+		}
 		c.Redirect(http.StatusFound, link.Url)
 		log.Println("Redirecting to:", link.Url)
+	}
+}
+
+func GetLinkStatistics() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		shortCode := c.Param("shortCode")
+		if shortCode == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Short code is required"})
+			return
+		}
+		link, err := repository.GetLinkByShortCode(shortCode)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch link"})
+			return
+		}
+		if link == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Short code not found"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"click_count": link.ClickCount,
+			"url":         link.Url,
+			"short_code":  link.ShortCode,
+			"created_at": link.CreatedAt,
+			"expiry":      link.ExpireAt,
+		})
 	}
 }

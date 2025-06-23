@@ -12,6 +12,7 @@ type Link struct {
   Url string	`json:"url"`
   Validity int	`json:"validity"`
   ShortCode string	`json:"shortcode"`
+  ClickCount int	`json:"click_count"`
   ExpireAt time.Time
   ShortLink string 
 }

@@ -6,8 +6,9 @@ import (
 )
 
 func RegisterRoutes(router *gin.Engine){
-	router.GET("/:shortCode",controller.RedirectToLink())
 	router.GET("/test",controller.TestAPI())
 	router.POST("/shorturls",controller.CreateLink())
+	router.GET("/shorturls/:shortCode",controller.GetLinkStatistics())
+	router.GET("/:shortCode",controller.RedirectToLink())
 }
 

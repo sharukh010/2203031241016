@@ -21,18 +21,35 @@ func init(){
 
 func CreateLink(newLink *db.Link) error {
 	if err := mydb.Create(newLink).Error; err != nil {
-		log.Println("Error while creating new link:", err)
 		return err
 	}
-	log.Println("New link created successfully")
 	return nil
 }
 func GetLinkByShortCode(shortCode string) (*db.Link, error) {
 	var link db.Link
 	if err := mydb.Where("short_code = ?", shortCode).First(&link).Error; err != nil {
-		log.Println("Error while fetching link by short code:", err)
 		return nil, err
 	}
-	log.Println("Link fetched successfully by short code")
 	return &link, nil
+}
+
+func IsLinkExists(shortCode string) bool {
+	var count int64
+	if err := mydb.Model(&db.Link{}).Where("short_code = ?", shortCode).Count(&count).Error; err != nil {
+		log.Println("Error checking if link exists:", err)
+		return false
+	}
+	return count > 0
+}
+
+func UpdateClickCount(shortCode string) error {
+	var link db.Link
+	if err := mydb.Where("short_code = ?", shortCode).First(&link).Error; err != nil {
+		return err
+	}
+	link.ClickCount++
+	if err := mydb.Save(&link).Error; err != nil {
+		return err
+	}
+	return nil
 }
