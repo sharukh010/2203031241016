@@ -7,9 +7,9 @@ import (
 	"gorm.io/gorm"
 )
 
-type Url struct {
+type Link struct {
   gorm.Model
-  Link string	`json:"link" validate:"required,min_length=5"`
+  Url string	`json:"url"`
   Validity int	`json:"validity"`
   ShortCode string	`json:"shortcode"`
   ExpireAt time.Time
@@ -21,7 +21,7 @@ func GetDB()(*gorm.DB,error){
   if err != nil {
     return nil,err 
   }
-  if err := db.AutoMigrate(&Url{}); err != nil {
+  if err := db.AutoMigrate(&Link{}); err != nil {
 	return nil,err 
   }
   return db,nil 

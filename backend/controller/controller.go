@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -30,7 +31,7 @@ func TestAPI() gin.HandlerFunc {
 func CreateLink() gin.HandlerFunc{
 
 	return func(c *gin.Context){
-		var newLink db.Url
+		var newLink db.Link
 		if err := c.BindJSON(&newLink); err != nil {
 			c.JSON(http.StatusBadRequest,gin.H{"error":err.Error()})
 			return 
@@ -53,4 +54,31 @@ func CreateLink() gin.HandlerFunc{
 	}
 
 
+}
+
+func RedirectToLink() gin.HandlerFunc{
+	return func(c *gin.Context){
+		shortCode := c.Param("shortCode")
+		if shortCode == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Short code is required"})
+			return
+		}
+		link, err := repository.GetLinkByShortCode(shortCode)
+		if err != nil {
+			log.Println("Error while fetching link:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch link"})
+			return
+		}
+		if link == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Short code not found"})
+			return
+		}
+		if link.ExpireAt.Before(time.Now()) {
+			c.JSON(http.StatusGone, gin.H{"error": "Short link has expired"})
+			return
+		}
+		fmt.Print("Redirecting to link:", link, "\n")
+		c.Redirect(http.StatusFound, link.Url)
+		log.Println("Redirecting to:", link.Url)
+	}
 }
